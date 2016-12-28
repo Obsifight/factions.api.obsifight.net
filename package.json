@@ -1,0 +1,23 @@
+{
+  "name": "faction-ranking",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/obsifight/FactionRanking.git"
+  },
+  "author": "Eywek <contact@eywek.fr>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/obsifight/FactionRanking/issues"
+  },
+  "homepage": "https://gitlab.com/obsifight/FactionRanking#README",
+  "dependencies": {
+    "express": "^4.14.0",
+    "mongodb": "^2.2.16"
+  }
+}
