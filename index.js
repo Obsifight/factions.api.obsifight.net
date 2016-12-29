@@ -103,7 +103,12 @@ app.get('/player/is-leader/:username', function (req, res) {
       console.error(err)
       return res.status(500).json({status: false})
     }
-    return res.json({status: true, isLeader: (rows && rows[0] !== undefined)})
+    var isLeader = (rows && rows[0] !== undefined)
+    return res.json({
+      status: true,
+      isLeader: isLeader,
+      factionId: (isLeader) ? rows[0].id : null
+    })
   })
 })
 
