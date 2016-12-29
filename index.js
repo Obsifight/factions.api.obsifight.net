@@ -31,6 +31,7 @@ new CronJob('0 0 */2 * * *', function () { // Every 2 hours
 app.get('/data', function (req, res) {
   console.info('[' + new Date() + '] Request factions.json from ' + req.ip)
   res.setHeader('Content-Type', 'application/json') // is json
+  res.setHeader('Last-Modified', fs.statSync('./data/factions.json').mtime) // last modified
   fs.createReadStream('./data/factions.json').pipe(res) // pipe cache file
 })
 
