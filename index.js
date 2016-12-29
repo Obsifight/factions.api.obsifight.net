@@ -32,6 +32,8 @@ app.get('/data', function (req, res) {
   console.info('[' + new Date() + '] Request factions.json from ' + req.ip)
   res.setHeader('Content-Type', 'application/json') // is json
   res.setHeader('Last-Modified', fs.statSync('./data/factions.json').mtime) // last modified
+  res.setHeader('Access-Control-Allow-Origin', '.obsifight.net') // access for js
+  res.setHeader('Access-Control-Allow-Methods', 'GET') // only 1 method
   fs.createReadStream('./data/factions.json').pipe(res) // pipe cache file
 })
 
