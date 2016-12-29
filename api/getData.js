@@ -29,6 +29,7 @@ module.exports = function () { // Call every 2 hours
       console.info('   ' + faction.name + ' added !')
       // Set temp data
       temp = {
+        id: faction.id,
         name: faction.name,
         description: faction.description,
         stats: {
