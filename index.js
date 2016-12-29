@@ -3,6 +3,7 @@
 // ==========
 var express = require('express')
 var fs = require('fs')
+var CronJob = require('cron').CronJob
 var app = express()
 
 // ==========
@@ -16,6 +17,13 @@ app.get('/', function (req, res) {
     environement: (process.env.NODE_ENV === 'production') ? 'production' : 'development'
   })
 })
+
+// ===========
+// UPDATE DATA
+// ===========
+new CronJob('0 0 */2 * * *', function () { // Every 2 hours
+  require('./api/getData')()
+}, null, true, 'Europe/Paris')
 
 // ==========
 // GET DATA
