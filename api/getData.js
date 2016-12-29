@@ -67,6 +67,11 @@ module.exports = function () { // Call every 2 hours
       factions.push(temp)
     }
 
+    // order
+    factions.sort(function (a, b) {
+      return b.points - a.points
+    })
+
     fs.writeFile('./data/factions.json', JSON.stringify(factions), function (err) {
       if (err) return console.error(err)
     })
