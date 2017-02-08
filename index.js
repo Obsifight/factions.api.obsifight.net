@@ -8,6 +8,15 @@ global.mysql = require('mysql')
 global.config = require('./config/config')
 var app = express()
 
+var connection = mysql.createPool({
+  connectionLimit : 10,
+  host: config.db.factions.host,
+  user: config.db.factions.user,
+  password: config.db.factions.password,
+  database: config.db.factions.database
+})
+global.connection = connection
+
 // ==========
 // HOMEPAGE
 // ==========
@@ -56,15 +65,6 @@ app.get('/data/:factionid', function (req, res) {
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET') // only 1 method
 
-  // connection
-  var connection = mysql.createConnection({
-    host: config.db.factions.host,
-    user: config.db.factions.user,
-    password: config.db.factions.password,
-    database: config.db.factions.database
-  })
-  connection.connect()
-
   // find
   connection.query('SELECT * FROM `rsf_factions` WHERE id = ?', [factionId], function (err, rows, fields) {
     if (err) {
@@ -87,15 +87,6 @@ app.get('/player/is-leader/:username', function (req, res) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET') // only 1 method
-
-  // connection
-  var connection = mysql.createConnection({
-    host: config.db.factions.host,
-    user: config.db.factions.user,
-    password: config.db.factions.password,
-    database: config.db.factions.database
-  })
-  connection.connect()
 
   // find
   connection.query('SELECT * FROM `rsf_factions` WHERE leader = ?', [username], function (err, rows, fields) {

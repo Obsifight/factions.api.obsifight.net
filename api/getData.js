@@ -5,13 +5,13 @@ var mysql = require('mysql')
 var fs = require('fs')
 var config = require('../config/config')
 
-global.connection = mysql.createConnection({
+global.connection = mysql.createPool({
+  connectionLimit : 10,
   host: config.db.factions.host,
   user: config.db.factions.user,
   password: config.db.factions.password,
   database: config.db.factions.database
 })
-global.connection.connect()
 
 module.exports = function (formatting) { // Call every 2 hours
   console.info('-- Start update factions.json --')
