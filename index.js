@@ -29,27 +29,37 @@ app.get('/', function (req, res) {
   })
 })
 
-// ===========
-// UPDATE DATA
-// ===========
-new CronJob('0 0 */2 * * *', function () { // Every 2 hours
-  require('./api/getData')(require('./api/formatting'))
-}, null, true, 'Europe/Paris')
-
 // ==========
 // GET DATA
 // ==========
 app.get('/data', function (req, res) {
   console.info('[' + new Date() + '] Request factions.json from ' + req.ip)
   res.setHeader('Content-Type', 'application/json') // is json
-  res.setHeader('Last-Modified', fs.statSync('./data/factions.json').mtime) // last modified
+  res.setHeader('Last-Modified', new Date()) // last modified
   var allowedOrigins = ['http://dev.obsifight.net', 'http://obsifight.net', 'https://obsifight.net']
   var origin = req.headers.origin
   if (allowedOrigins.indexOf(origin) > -1) {
     res.setHeader('Access-Control-Allow-Origin', origin)
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET') // only 1 method
-  fs.createReadStream('./data/factions.json').pipe(res) // pipe cache file
+  var formatting = require('./api/formatting')
+
+  connection.query('SELECT * FROM `rsf_factions`', function (err, rows, fields) {
+    if (err) return console.error(err)
+
+    var factions = []
+    for (var i = 0; i < rows.length; i++) {
+      faction = rows[i]
+      // Set temp data
+      temp = formatting(faction)
+
+      // push temp data
+      factions.push(temp)
+    }
+
+    res.json(factions)
+    connection.end()
+  })
 })
 
 app.get('/data/:factionid', function (req, res) {
