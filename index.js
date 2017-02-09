@@ -58,7 +58,6 @@ app.get('/data', function (req, res) {
     }
 
     res.json(factions)
-    connection.end()
   })
 })
 
