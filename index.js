@@ -44,7 +44,7 @@ app.get('/data', function (req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET') // only 1 method
   var formatting = require('./api/formatting')
 
-  connection.query('SELECT * FROM `rsf_factions`', function (err, rows, fields) {
+  connection.query('SELECT * FROM `rsf_factions` ORDER BY `score` DESC', function (err, rows, fields) {
     if (err) return console.error(err)
 
     var factions = []
