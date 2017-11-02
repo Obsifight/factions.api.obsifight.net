@@ -4,21 +4,17 @@ var mongoClient = require("mongodb").MongoClient;
 
 module.exports = {
 
-    getMongo: function () {
+    getMongo: function (next) {
         var self = this
 
         if (self.mongo !== undefined)
             return self.mongo
-        mongoClient.connect("mongodb://" + config.db.factions.host + ":" + config.db.factions.port + "/" + config.db.factions.database, function(err, db) {
+        mongoClient.connect("mongodb://" + config.db.factions.user + ":" + config.db.factions.password + "@" + config.db.factions.host + ":" + config.db.factions.port + "/" + config.db.factions.database, function(err, db) {
             if (err)
                 return console.error(err)
 
-            db.authenticate(config.db.factions.user, config.db.factions.password, function (err, status) {
-                if (err || status)
-                    return console.error(err || 'Unable to connect to MongoDB')
-                self.mongo = db;
-                return db;
-            })
+            self.mongo = db;
+            next(db);
         });
     },
 

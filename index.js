@@ -32,6 +32,11 @@ new CronJob("0 0 0 * * 0", graphDataHandler.generate, function () {
 // GET DATA
 // ==========
 app.get('/data', dataHandler.display)
+app.get('/data/refresh', function (req, res) {
+    res.send('done.')
+    console.log("Factions data are updating...")
+    dataHandler.generate()
+})
 
 app.get('/data/:factionId', dataHandler.displayFaction)
 app.get('/data/:factionId/graph', graphDataHandler.displayFaction)
