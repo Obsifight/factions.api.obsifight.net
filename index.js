@@ -3,11 +3,12 @@
 // ==========
 var CronJob = require("cron").CronJob
 var express = require("express")
+var bodyParser = require('body-parser')
 var dataHandler = require("./api/dataHandler")
 var graphDataHandler = require("./api/graphDataHandler")
 
 var app = express()
-app.use(express.bodyParser())
+app.use(bodyParser.urlencoded({extended: false}))
 app.all('/', function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Content-Type");
