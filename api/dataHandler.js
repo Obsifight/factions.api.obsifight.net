@@ -108,9 +108,6 @@ module.exports = {
                         if (err)
                             return console.error(err)
 
-                        databases.getKillStats().close()
-                        databases.getEconomy().close()
-
                         // Order
                         results.sort(function (a, b) {
                             return a.score - b.score;
