@@ -1,6 +1,7 @@
 var databases = require('../config/db')
 var async = require('async')
 var _ = require('underscore')
+var DatatableQueryBuilder = require('node-datatable')
 
 module.exports = {
 
@@ -32,7 +33,7 @@ module.exports = {
                         // Set basic data
                         result.id = faction._id.toString()
                         result.name = faction.name
-                        result.description = faction.description
+                        result.description = faction.description || null
 
                         // Get players
                         mongoDatabase.collection('factions_mplayer').find({"factionId": result.id}).toArray(function (err, players) {
@@ -45,13 +46,13 @@ module.exports = {
                             // Power/Claims data
                             result.current_power = players.reduce(function (result, player) { // calcul power
                                 return result + player.power
-                            }, 0)
-                            result.max_power = players.length * self.maxPower
+                            }, 0) || 0
+                            result.max_power = players.length * self.maxPower || 0
                             result.claims_count = _.reduce(claims, function (result, claim) {
                                 if (_.values(claim).indexOf(result.id) !== -1)
                                     result.push(claim)
                                 return result
-                            }, []).length
+                            }, []).length || 0
                             result.outpost_count = 0 // TODO
 
                             // Get kills and deaths data
@@ -171,7 +172,52 @@ module.exports = {
     },
 
     display: function (req, res) {
+        var datatableQueryBuilder = new DatatableQueryBuilder({
+            sTableName: 'factions'
+        });
 
+        // requestQuery is normally provided by the DataTables AJAX call
+        var requestQuery = {
+            iDisplayStart: 0,
+            iDisplayLength: 5
+        };
+        requestQuery = Object.assign(requestQuery, req.query)
+
+        // Build an object of SQL statements
+        var queries = datatableQueryBuilder.buildQuery(requestQuery);
+
+        // Execute the SQL statements generated
+        var db = databases.getMysql('cache')
+
+        async.parallel({
+            recordsFiltered: function(cb) {
+                if (queries.recordsFiltered)
+                    db.query(queries.recordsFiltered, function (err, rows) {
+                        cb(err, rows)
+                    })
+                else
+                    cb(undefined, 0)
+            },
+
+            recordsTotal: function(cb) {
+                db.query(queries.recordsTotal, function (err, rows) {
+                    cb(err, rows)
+                })
+            },
+
+            select: function(cb) {
+                db.query(queries.select, function (err, rows) {
+                    cb(err, rows)
+                })
+            }
+        },
+        function(err, results) {
+            if (err) {
+                console.error(err)
+                return res.sendStatus(500);
+            }
+            res.json(datatableQueryBuilder.parseResponse(results))
+        })
     },
 
     displayFaction: function (req, res) {

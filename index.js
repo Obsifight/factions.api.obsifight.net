@@ -8,8 +8,8 @@ var dataHandler = require("./api/dataHandler")
 var graphDataHandler = require("./api/graphDataHandler")
 
 var app = express()
-app.use(bodyParser.urlencoded({extended: false}))
-app.all('/', function(req, res, next) {
+app.use(bodyParser.urlencoded({extended: true}))
+app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Content-Type");
     next()
@@ -19,7 +19,10 @@ app.all('/', function(req, res, next) {
 // DAEMON
 // ==========
 console.log("Start factions daemon...")
-new CronJob("* */15 * * * *", dataHandler.generate, function () {
+new CronJob("0 */15 * * * *", function () {
+    console.log("Factions data are updating...")
+    dataHandler.generate()
+}, function () {
     console.log("Factions data are updated!")
 }, true, "Europe/Paris")
 
