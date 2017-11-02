@@ -24,45 +24,17 @@ module.exports = {
         this.mongo = undefined
     },
 
-    getKillStats: function () {
-        if (this.killstats !== undefined)
-            return this.killstats
+    getMysql: function (connectionName) {
+        if (this[connectionName] !== undefined)
+            return this[connectionName]
         var db = mysql.createConnection({
-            host: config.db.killstats.host,
-            user: config.db.killstats.user,
-            password: config.db.killstats.password,
-            database: config.db.killstats.database
+            host: config.db[connectionName].host,
+            user: config.db[connectionName].user,
+            password: config.db[connectionName].password,
+            database: config.db[connectionName].database
         })
         db.connect()
-        this.killstats = db
-        return db
-    },
-
-    getEconomy: function () {
-        if (this.economy !== undefined)
-            return this.economy
-        var db = mysql.createConnection({
-            host: config.db.economy.host,
-            user: config.db.economy.user,
-            password: config.db.economy.password,
-            database: config.db.economy.database
-        })
-        db.connect()
-        this.economy = db
-        return db
-    },
-
-    getCache: function () {
-        if (this.cache !== undefined)
-            return this.cache
-        var db = mysql.createConnection({
-            host: config.db.cache.host,
-            user: config.db.cache.user,
-            password: config.db.cache.password,
-            database: config.db.cache.database
-        })
-        db.connect()
-        this.cache = db
+        this[connectionName] = db
         return db
     },
 

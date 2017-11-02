@@ -9,9 +9,9 @@ module.exports = {
     generate: function () {
         var self = this
         var results = []
-        var killStatsDb = databases.getKillStats()
-        var ecomomyDb = databases.getEconomy()
-        var cacheDb = databases.getCache()
+        var killStatsDb = databases.getMysql('killstats')
+        var ecomomyDb = databases.getMysql('economy')
+        var cacheDb = databases.getMysql('cache')
 
         databases.getMongo(function (mongoDatabase) {
             mongoDatabase.collection('factions_faction').find().toArray(function (err, factions) {
