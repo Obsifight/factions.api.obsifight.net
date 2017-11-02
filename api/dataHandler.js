@@ -9,6 +9,10 @@ module.exports = {
     generate: function () {
         var self = this
         var results = []
+        var killStatsDb = databases.getKillStats()
+        var ecomomyDb = databases.getEconomy()
+        var cacheDb = databases.getCache()
+
         databases.getMongo(function (mongoDatabase) {
             mongoDatabase.collection('factions_faction').find().toArray(function (err, factions) {
                 if (err)
@@ -21,11 +25,14 @@ module.exports = {
 
                     // Add data
                     async.each(factions, function (faction, next) {
+                        if (['safezone', 'warzone', 'none'].indexOf(faction._id.toString()) !== -1)
+                            return next()
                         var result = {}
 
                         // Set basic data
                         result.id = faction._id.toString()
                         result.name = faction.name
+                        result.description = faction.description
 
                         // Get players
                         mongoDatabase.collection('factions_mplayer').find({"factionId": result.id}).toArray(function (err, players) {
@@ -56,7 +63,7 @@ module.exports = {
                                 async.parallel([
 
                                     function (cb) {
-                                        databases.getKillStats().query(
+                                        killStatsDb.query(
                                             'SELECT kills as kills, morts as deaths FROM obsikillstats_st WHERE player = "' + player._id.toString() + '" LIMIT 1',
                                             function (err, rows) {
                                                 if (err)
@@ -66,7 +73,7 @@ module.exports = {
                                     },
 
                                     function (cb) {
-                                        databases.getEconomy().query(
+                                        ecomomyDb.query(
                                             'SELECT of_economy_balance.balance as money FROM of_economy_account ' +
                                             'INNER JOIN of_economy_balance ON of_economy_balance.username_id = of_economy_account.id ' +
                                             'WHERE uuid = "' + player._id.toString() + '" LIMIT 1',
@@ -98,7 +105,7 @@ module.exports = {
                                 result.money = moneyCount
 
                                 // Set score
-                                result.score = self.calculScore(result)
+                                result.score = calculScore(result)
 
                                 results.push(result)
                                 next()
@@ -110,10 +117,10 @@ module.exports = {
 
                         // Order
                         results.sort(function (a, b) {
-                            return a.score - b.score;
+                            return b.score - a.score;
                         })
                         results = results.map(function (result, position) {
-                            result.position = position
+                            result.position = position + 1
                             return result
                         })
 
@@ -124,28 +131,43 @@ module.exports = {
             })
 
             var saveToCache = function (data) {
-                var keys = Object.keys(data[0])
-                var keysString = keys.join(', ')
-                var values = []
-                for (var i = 0; i < data.length; i++) {
-                    values.push(_.values(data[i]))
+                var next = function () {
+                    if (data.length === 0)
+                        return closeDatabases()
+                    var keys = Object.keys(data[0])
+                    var keysString = keys.join(', ')
+                    var values = []
+                    for (var i = 0; i < data.length; i++) {
+                        values.push(_.values(data[i]))
+                    }
+
+                    cacheDb.query("INSERT INTO factions (" + keysString + ") VALUES ?", [values], function (err) {
+                        if (err)
+                            return console.error(err)
+                    })
+                    closeDatabases()
                 }
 
-                databases.getCache().query("INSERT INTO factions (" + keysString + ") VALUES ?", [values], function (err) {
-                    if (err)
-                        return console.error(err)
-                    databases.getCache().close()
-                })
+                cacheDb.query("DELETE FROM factions", next)
+            }
+            var calculScore = function (faction) {
+                var score = 0
+
+                score += faction.kills_count
+
+                return score
+            }
+            var closeDatabases = function () {
+                try {
+                    databases.closeMysql('killstats')
+                    databases.closeMysql('economy')
+                    databases.closeMysql('cache')
+                    databases.closeMongo()
+                } catch (err) {
+                    console.error(err)
+                }
             }
         })
-    },
-
-    calculScore: function (faction) {
-        var score = 0
-
-        score += faction.kills
-
-        return score
     },
 
     display: function (req, res) {

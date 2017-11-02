@@ -8,7 +8,7 @@ module.exports = {
         var self = this
 
         if (self.mongo !== undefined)
-            return self.mongo
+            return next(self.mongo)
         mongoClient.connect("mongodb://" + config.db.factions.user + ":" + config.db.factions.password + "@" + config.db.factions.host + ":" + config.db.factions.port + "/" + config.db.factions.database, function(err, db) {
             if (err)
                 return console.error(err)
@@ -16,6 +16,12 @@ module.exports = {
             self.mongo = db;
             next(db);
         });
+    },
+
+    closeMongo: function () {
+        if (this.mongo !== undefined)
+            this.mongo.close()
+        this.mongo = undefined
     },
 
     getKillStats: function () {
@@ -27,6 +33,7 @@ module.exports = {
             password: config.db.killstats.password,
             database: config.db.killstats.database
         })
+        db.connect()
         this.killstats = db
         return db
     },
@@ -40,6 +47,7 @@ module.exports = {
             password: config.db.economy.password,
             database: config.db.economy.database
         })
+        db.connect()
         this.economy = db
         return db
     },
@@ -53,8 +61,15 @@ module.exports = {
             password: config.db.cache.password,
             database: config.db.cache.database
         })
+        db.connect()
         this.cache = db
         return db
+    },
+
+    closeMysql: function (connectionName) {
+        if (this[connectionName] !== undefined)
+            this[connectionName].end()
+        this[connectionName] = undefined
     }
 
 }
