@@ -3,17 +3,15 @@
 // ==========
 var CronJob = require("cron").CronJob
 var express = require("express")
-var dataHandler = require("api/dataHandler")
-var graphDataHandler = require("api/graphDataHandler")
+var dataHandler = require("./api/dataHandler")
+var graphDataHandler = require("./api/graphDataHandler")
 
 var app = express()
-app.configure(function () {
-    app.use(express.bodyParser())
-    app.use(app.router); app.all('/', function(req, res, next) {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Content-Type");
-        next()
-    })
+app.use(express.bodyParser())
+app.all('/', function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    next()
 })
 
 // ==========

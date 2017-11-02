@@ -1,4 +1,4 @@
-var databases = require('config/db')
+var databases = require('../config/db')
 var async = require('async')
 
 module.exports = {
