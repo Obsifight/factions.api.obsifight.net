@@ -1,7 +1,10 @@
 var databases = require('../config/db')
+var config = require('../config/config')
 var async = require('async')
 var _ = require('underscore')
 var DatatableQueryBuilder = require('node-datatable')
+var Api = require('obsifight-libs')
+var api = new Api(config.api.credentials.user, config.api.credentials.password)
 
 module.exports = {
 
@@ -221,7 +224,106 @@ module.exports = {
     },
 
     displayFaction: function (req, res) {
+        // Check request
+        var factionId = req.params.factionId
 
+        // Find faction on cache
+        databases.getMysql('cache').query('SELECT * FROM factions WHERE id = ?', [factionId], function (err, rows) {
+            if (err) {
+                console.error(err)
+                return res.status(500).json({status: false, error: "Unable to get factions."})
+            }
+            if (rows.length === 0)
+                return res.status(404).json({status: false, error: "Faction not found."})
+            var faction = rows[0]
+
+            // Add players list
+            databases.getMongo(function (mongoDatabase) {
+                mongoDatabase.collection('factions_mplayer').find({"factionId": faction.id}).toArray(function (err, rawPlayers) {
+                    if (err) {
+                        console.error(err)
+                        return res.status(500).json({status: false, error: "Unable to find faction's players."})
+                    }
+
+                    // Get usernames
+                    api.request({
+                        route: '/user/infos/username',
+                        method: 'post',
+                        body: {
+                            uuids: rawPlayers.map(function (player) {
+                                return player._id.toString()
+                            })
+                        }
+                    }, function (err, result) {
+                        if (err || !result.status) {
+                            console.error(err || result.error || result.body)
+                            return res.status(500).json({status: false, error: "Unable to get player's usernames."})
+                        }
+
+                        var usersUsernameByUUID = result.body.data.users
+                        var players = []
+
+                        for (var i = 0; i < rawPlayers.length; i++) {
+                            players.push({
+                                uuid: rawPlayers[i]._id.toString(),
+                                username: usersUsernameByUUID[rawPlayers[i]._id.toString()],
+                                role: rawPlayers[i].role,
+                                power: rawPlayers[i].power
+                            })
+                        }
+                        faction.players = players
+
+                        // Get materials
+                        databases.getMysql('blockstats').query("SELECT material.name AS name, faction_material_count.count AS count\n" +
+                            "FROM material\n" +
+                            "LEFT JOIN faction_material_count\n" +
+                            "ON faction_material_count.material_id = material.id AND faction_material_count.faction_id = ?", [faction.id],
+                        function (err, rows) {
+                            if (err) {
+                                console.error(err)
+                                return res.status(500).json({status: false, error: "Unable to find faction's materials"})
+                            }
+
+                            faction.materials = {}
+                            for (var i = 0; i < rows.length; i++) {
+                                if (rows[i].count)
+                                    faction.materials[rows[i].name] = rows[i].count
+                                else
+                                    faction.materials[rows[i].name] = 0
+                            }
+
+                            // Get spawners count
+                            databases.getMysql('blockstats').query("SELECT spawner.name AS name, faction_spawner_count.count AS count\n" +
+                                "FROM spawner\n" +
+                                "LEFT JOIN faction_spawner_count\n" +
+                                "ON faction_spawner_count.spawner_id = spawner.id AND faction_spawner_count.faction_id = ?", [faction.id],
+                            function (err, rows) {
+                                if (err) {
+                                    console.error(err)
+                                    return res.status(500).json({status: false, error: "Unable to find faction's spawners"})
+                                }
+
+                                faction.spawners = {}
+                                for (var i = 0; i < rows.length; i++) {
+                                    if (rows[i].count)
+                                        faction.spawners[rows[i].name] = rows[i].count
+                                    else
+                                        faction.spawners[rows[i].name] = 0
+                                }
+
+                                // close connections
+                                databases.closeMysql('cache')
+                                databases.closeMysql('blockstats')
+                                databases.closeMongo()
+
+                                // send
+                                res.json({status: true, data: faction})
+                            })
+                        })
+                    })
+                })
+            })
+        })
     },
 
     searchUser: function (req, res) {
