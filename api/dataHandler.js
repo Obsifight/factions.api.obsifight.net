@@ -260,7 +260,7 @@ module.exports = {
                             return res.status(500).json({status: false, error: "Unable to get player's usernames."})
                         }
 
-                        var usersUsernameByUUID = result.body.data.users
+                        var usersUsernameByUUID = result.body.users
                         var players = []
 
                         for (var i = 0; i < rawPlayers.length; i++) {
@@ -327,7 +327,56 @@ module.exports = {
     },
 
     searchUser: function (req, res) {
+        // Get uuid
+        api.request({
+            route: '/user/uuid/from/' + req.params.username,
+            method: 'get'
+        }, function (err, result) {
+            if (err || !result.status) {
+                console.error(err || result.error || result.body)
+                return res.status(500).json({status: false, error: "Unable to find player's uuid."})
+            }
 
+            // Search player
+            databases.getMongo(function (mongoDatabase) {
+                mongoDatabase.collection('factions_mplayer').find({"_id": result.body.uuid}).toArray(function (err, players) {
+                    if (err) {
+                        console.error(err)
+                        return res.status(500).json({status: false, error: "Unable to find player."})
+                    }
+                    if (players.length === 0)
+                        return res.status(404).json({status: false, error: "User not found."})
+                    var player = {
+                        power: players[0].power,
+                        faction: {}
+                    }
+
+                    var next = function () {
+                        databases.closeMongo()
+                        return res.json({status: true, data: player})
+                    }
+
+                    if (players[0].factionId) {
+                        player.faction.id = players[0].factionId
+                        // Find faction on cache
+                        databases.getMysql('cache').query('SELECT * FROM factions WHERE id = ?', [player.faction.id], function (err, rows) {
+                            if (err) {
+                                console.error(err)
+                                return res.status(500).json({status: false, error: "Unable to get factions."})
+                            }
+                            if (rows.length === 0)
+                                return res.status(404).json({status: false, error: "Faction not found."})
+                            player.faction.name = rows[0].name
+
+                            databases.closeMysql('cache')
+                            next()
+                        })
+                    } else {
+                        next()
+                    }
+                })
+            })
+        })
     }
 
 }
